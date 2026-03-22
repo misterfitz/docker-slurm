@@ -27,28 +27,29 @@ check_pkg_exists() {
     fi
 }
 
-# Give Slurm enought time to initialize
+# Give Slurm enough time to initialize
 sleep 2
 
 
 ## TESTS ---------------------------------------------------------------------
-# Check operating system version
-ubuntu_version=22.04
-if [ "$(cat /etc/os-release | grep VERSION_ID)" == "VERSION_ID=\"${ubuntu_version}\"" ]; then
-    echo PASS: Operating system: Ubuntu ${ubuntu_version}
+# Check operating system
+os_id=$(. /etc/os-release && echo $ID)
+if [ "${os_id}" == "rocky" ]; then
+    echo PASS: Operating system: Rocky Linux
     num_pass=$((num_pass+1))
 else
-    echo FAIL: Operating system: $(cat /etc/os-release | grep VERSION_ID) != ${ubuntu_version}
+    echo FAIL: Operating system: ${os_id} != rocky
     num_fail=$((num_fail+1))
 fi
 
 # Check time zone
 timezone=America/New_York
-if [ "$(cat /etc/timezone)" == ${timezone} ]; then
+current_tz=$(readlink /etc/localtime | sed 's|.*/zoneinfo/||')
+if [ "${current_tz}" == "${timezone}" ]; then
     echo PASS: Time zone: ${timezone}
     num_pass=$((num_pass+1))
 else
-    echo FAIL: Time zone: $(cat /etc/timezone) != ${timezone}
+    echo FAIL: Time zone: ${current_tz} != ${timezone}
     num_fail=$((num_fail+1))
 fi
 

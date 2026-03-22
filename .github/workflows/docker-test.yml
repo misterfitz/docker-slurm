@@ -7,14 +7,35 @@ on:
 
 jobs:
   test:
-    name: Docker Test
+    name: Slurm ${{ matrix.slurm_version }} / Rocky ${{ matrix.rocky_version }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rocky_version: "8"
+            slurm_version: "23.02.6"
+          - rocky_version: "8"
+            slurm_version: "24.11.5"
+          - rocky_version: "8"
+            slurm_version: "25.05.1"
+          - rocky_version: "9"
+            slurm_version: "24.11.5"
+          - rocky_version: "9"
+            slurm_version: "25.05.1"
     steps:
       - name: Check Out Repository Files
         uses: actions/checkout@v3
 
       - name: Set Up Runner
         uses: './.github/workflows/composite-actions/setup'
+
+      - name: Set Version Overrides
+        run: |
+          echo "SLURM_VERSION=${{ matrix.slurm_version }}" >> $GITHUB_ENV
+          echo "CONTAINER_ROCKY_VERSION=${{ matrix.rocky_version }}" >> $GITHUB_ENV
+          SLURM_SHORT=$(echo "${{ matrix.slurm_version }}" | cut -d. -f1,2)
+          echo "SLURM_VERSION_SHORT=${SLURM_SHORT}" >> $GITHUB_ENV
 
       - name: Test Docker Image - base - standard
         if: ${{ always() }}
@@ -29,6 +50,12 @@ jobs:
         with:
           user: root
           docker_build_context: dockerfile_base/
+
+      - name: Set BASE_TAG for Full Image Dependency
+        run: |
+          sv="${SLURM_VERSION_SHORT}"
+          el="el${{ matrix.rocky_version }}"
+          echo "TAG_BASE_ROOT=${{ env.TAG_BASE_ROOT }}-${sv}-${el}" >> $GITHUB_ENV
 
       - name: Build Image - base/root (full image dependency)
         uses: './.github/workflows/composite-actions/docker-build-push'

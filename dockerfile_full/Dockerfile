@@ -15,12 +15,11 @@ ARG UID
 FROM ${BASE_DOCKER_REPO}:${BASE_TAG} AS stage-root
 
 # Run system updates
-RUN apt update && apt -y upgrade
+RUN dnf -y upgrade
 
 # Install system packages
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt -y install bc \
-                   build-essential \
+RUN dnf -y install bc \
+                   gcc gcc-c++ make \
                    curl \
                    dos2unix \
                    gdb \
@@ -29,16 +28,12 @@ RUN DEBIAN_FRONTEND=noninteractive \
                    htop \
                    lshw \
                    nano \
-                   munge \
                    net-tools \
                    openssl \
                    python3-pip \
-                   python3-tk \
-                   python3-venv \
-                   slurm-wlm \
-                   slurm-wlm-doc \
-                   slurm-wlm-basic-plugins \
-                   slurm-wlm-basic-plugins-dev \
+                   python3-tkinter \
+                   slurm-devel \
+                   slurm-contribs \
                    tree \
                    vim \
                    wget \
@@ -55,10 +50,10 @@ ARG USERNAME
 ARG PASSWORD
 ARG UID
 
-# Create user account and add to "sudo" group
-RUN apt -y install sudo openssl
+# Create user account and add to "wheel" group
+RUN dnf -y install sudo openssl
 RUN useradd --create-home --uid=${UID} ${USERNAME} -p "$(openssl passwd -1 ${PASSWORD})" \
-    && usermod -a -G sudo ${USERNAME}
+    && usermod -a -G wheel ${USERNAME}
 
 # Configure user permissions for startup script
 RUN printf "${USERNAME} ALL=(root:root) NOPASSWD: /etc/startup.sh\n" >> /etc/sudoers.d/startup \
@@ -69,7 +64,7 @@ RUN printf "${USERNAME} ALL=(root:root) NOPASSWD: /etc/startup.sh\n" >> /etc/sud
 USER ${USERNAME}
 
 # Enable colored Bash terminal prompt
-RUN sed -i -e 's/#force_color_prompt=yes/force_color_prompt=yes/' /home/${USERNAME}/.bashrc
+RUN echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> ~/.bashrc
 
 # Add Python package executables to PATH
 ENV PATH="${PATH}:/home/${USERNAME}/.local/bin"
