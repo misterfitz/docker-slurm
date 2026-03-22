@@ -12,7 +12,7 @@ fi
 ${sudo_cmd} bash <<SCRIPT
 sed -i "s/<<HOSTNAME>>/$(hostname)/" /etc/slurm/slurm.conf
 sed -i "s/<<CPU>>/$(nproc)/" /etc/slurm/slurm.conf
-sed -i "s/<<MEMORY>>/$(if [[ "$(slurmd -C)" =~ RealMemory=([0-9]+) ]]; then echo "${BASH_REMATCH[1]}"; else exit 100; fi)/" /etc/slurm/slurm.conf
+sed -i "s/<<MEMORY>>/$(slurmd -C 2>/dev/null | grep -oP 'RealMemory=\K[0-9]+' || awk '/MemTotal/ {printf "%d", int($2/1024)}' /proc/meminfo)/" /etc/slurm/slurm.conf
 
 # Slurm 24.05+ defaults to cgroup/v2 which needs dbus (unavailable in
 # containers). Use cgroup/v1 instead. Older versions ignore cgroup.conf

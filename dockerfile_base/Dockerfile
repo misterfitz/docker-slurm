@@ -39,13 +39,14 @@ RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
 RUN dnf -y install glibc-langpack-en
 ENV LANG=en_US.UTF-8
 
-# Create slurm user/group (RPMs may not create them)
-RUN groupadd -r slurm 2>/dev/null || true \
-    && useradd -r -g slurm -d /nonexistent -s /sbin/nologin slurm 2>/dev/null || true
-
 # Install munge and Slurm
 RUN dnf -y install munge munge-libs \
                    slurm slurm-slurmd slurm-slurmctld
+
+# Create slurm user/group if RPMs didn't (omnivector RPMs may not include
+# user-creation scriptlets, and %pre scripts may delete pre-existing users)
+RUN (getent group slurm >/dev/null 2>&1 || groupadd -r slurm) \
+    && (getent passwd slurm >/dev/null 2>&1 || useradd -r -g slurm -M -s /sbin/nologin slurm)
 
 # Generate munge key and fix log directory ownership
 RUN dd if=/dev/urandom of=/etc/munge/munge.key bs=1 count=1024 2>/dev/null \
