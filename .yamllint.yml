@@ -1,0 +1,17 @@
+extends: default
+
+rules:
+  # Disable the requirement for every YAML document to begin with "---";
+  # none of the existing files use it and it adds no value here.
+  document-start: disable
+
+  # GitHub Actions workflows and docker-compose files regularly contain lines
+  # longer than 80 characters (image names, secrets expressions, long URLs).
+  line-length:
+    max: 120
+
+  # Allow `on` / `off` as plain-scalar keys so GitHub Actions workflow files
+  # (which use `on:` as the trigger key) don't trigger false positives.
+  truthy:
+    allowed-values: ['true', 'false']
+    check-keys: false

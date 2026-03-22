@@ -1,0 +1,8 @@
+ignore:
+  - DL3006  # Always tag the version of an image explicitly - multi-stage
+            # build selectors (FROM stage-${VAR}) cannot carry image tags
+  - DL3025  # Use arguments JSON notation for CMD - CMD chains shell
+            # commands with `;` which requires a shell wrapper
+  - DL3041  # Specify version with dnf install - packages are intentionally
+            # unpinned so images always pull in the latest stable versions
+failure-threshold: warning

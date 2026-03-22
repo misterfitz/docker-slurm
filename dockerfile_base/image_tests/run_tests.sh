@@ -56,18 +56,18 @@ fi
 # Check user identity
 if [ "$1" == "root" ]; then
     if [ "$(id -u)" == "0" ]; then
-        echo PASS: User identity: $(whoami) id $(id -u)
+        echo "PASS: User identity: $(whoami) id $(id -u)"
         num_pass=$((num_pass+1))
     else
-        echo FAIL: User identity, $(whoami) id $(id -u), is not root
+        echo "FAIL: User identity, $(whoami) id $(id -u), is not root"
         num_fail=$((num_fail+1))
     fi
 elif [ "$1" == "standard" ]; then
     if [ "$(id -u)" == "0" ]; then
-        echo FAIL: User identity, $(whoami) id $(id -u), is root
+        echo "FAIL: User identity, $(whoami) id $(id -u), is root"
         num_fail=$((num_fail+1))
     else
-        echo PASS: User identity: $(whoami) id $(id -u)
+        echo "PASS: User identity: $(whoami) id $(id -u)"
         num_pass=$((num_pass+1))
     fi
 else

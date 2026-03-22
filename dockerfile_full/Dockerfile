@@ -14,11 +14,10 @@ ARG UID
 ## BUILD IMAGE: ROOT USER ----------------------------------------------------
 FROM ${BASE_DOCKER_REPO}:${BASE_TAG} AS stage-root
 
-# Run system updates
-RUN dnf -y upgrade
-
-# Install system packages
-RUN dnf -y install bc \
+# Run system updates and install system packages
+# hadolint ignore=DL3041
+RUN dnf -y upgrade \
+    && dnf -y install bc \
                    gcc gcc-c++ make \
                    curl \
                    dos2unix \
@@ -37,10 +36,12 @@ RUN dnf -y install bc \
                    tree \
                    vim \
                    wget \
-                   zip
+                   zip \
+    && dnf clean all
 
 # Set working directory and default command when running container
 WORKDIR /root
+# hadolint ignore=DL3025
 CMD /etc/startup.sh ; /bin/bash -l
 
 
@@ -51,7 +52,9 @@ ARG PASSWORD
 ARG UID
 
 # Create user account and add to "wheel" group
-RUN dnf -y install sudo openssl
+# hadolint ignore=DL3041
+RUN dnf -y install sudo openssl \
+    && dnf clean all
 RUN useradd --create-home --uid=${UID} ${USERNAME} -p "$(openssl passwd -1 ${PASSWORD})" \
     && usermod -a -G wheel ${USERNAME}
 
@@ -71,8 +74,10 @@ ENV PATH="${PATH}:/home/${USERNAME}/.local/bin"
 
 # Set working directory and default command when running container
 WORKDIR /home/${USERNAME}
+# hadolint ignore=DL3025
 CMD sudo /etc/startup.sh ; /bin/bash -l
 
 
 # SELECT DESIRED USER PRIVILEGE LEVEL ----------------------------------------
+# hadolint ignore=DL3006
 FROM stage-${USER_PRIVILEGE_LEVEL}
