@@ -23,8 +23,12 @@ RUN ROCKY_MAJOR=$(echo ${ROCKY_VERSION} | cut -d. -f1) \
     && printf "[slurm]\nname=Slurm RPM Repository\nbaseurl=https://omnivector-solutions.github.io/slurm-repo/${SLURM_VERSION}/rocky${ROCKY_MAJOR}/x86_64\nenabled=1\ngpgcheck=0\n" \
        > /etc/yum.repos.d/slurm.repo
 
-# Install EPEL and run system updates
+# Install EPEL, enable CRB/PowerTools (needed for dependencies on EL8),
+# and run system updates
 RUN dnf -y install epel-release \
+    && (dnf config-manager --set-enabled crb 2>/dev/null \
+        || dnf config-manager --set-enabled powertools 2>/dev/null \
+        || true) \
     && dnf -y upgrade
 
 # Set time zone
