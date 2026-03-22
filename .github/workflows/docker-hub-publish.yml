@@ -27,7 +27,7 @@ jobs:
             slurm_version: "25.05.1"
     steps:
       - name: Check Out Repository Files
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set Up Runner
         uses: './.github/workflows/composite-actions/setup'
@@ -54,7 +54,6 @@ jobs:
           echo "TAG_FULL_ROOT=${{ env.TAG_FULL_ROOT }}-${suffix}" >> $GITHUB_OUTPUT
 
       - name: Publish Docker Image - base - standard
-        if: ${{ always() }}
         uses: './.github/workflows/composite-actions/test-publish'
         with:
           user: standard
@@ -65,7 +64,6 @@ jobs:
           DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Publish Docker Image - base - root
-        if: ${{ always() }}
         uses: './.github/workflows/composite-actions/test-publish'
         with:
           user: root
@@ -91,7 +89,6 @@ jobs:
           tags: ${{ env.DOCKER_HUB_REPO }}:${{ env.TAG_BASE_ROOT }}
 
       - name: Publish Docker Image - full - standard
-        if: ${{ always() }}
         uses: './.github/workflows/composite-actions/test-publish'
         with:
           user: standard
@@ -103,7 +100,6 @@ jobs:
           DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Publish Docker Image - full - root
-        if: ${{ always() }}
         uses: './.github/workflows/composite-actions/test-publish'
         with:
           user: root
