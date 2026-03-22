@@ -17,7 +17,7 @@ num_fail=0
 check_pkg_exists() {
     pkg=$1
 
-    install_path=$(which $pkg)
+    install_path=$(command -v $pkg)
     if [ ! -z "${install_path}" ]; then
         echo PASS: Found package $pkg: ${install_path}
         num_pass=$((num_pass+1))

@@ -18,7 +18,8 @@ FROM ${BASE_DOCKER_REPO}:${BASE_TAG} AS stage-root
 RUN dnf -y upgrade
 
 # Install system packages
-RUN dnf -y install bc \
+# --allowerasing is needed on Rocky 9 where curl-minimal conflicts with curl
+RUN dnf -y install --allowerasing bc \
                    gcc gcc-c++ make \
                    curl \
                    dos2unix \
@@ -38,6 +39,16 @@ RUN dnf -y install bc \
                    vim \
                    wget \
                    zip
+
+# Ensure Python 3.8+ is available (python3-pip above installs python3 as a dep;
+# on Rocky 8 that defaults to Python 3.6, so upgrade to python39 if needed)
+RUN python3 -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)" || \
+    (dnf -y install python39 python39-pip && \
+     alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1000 && \
+     alternatives --set python3 /usr/bin/python3.9)
+
+# Upgrade pip to latest version
+RUN python3 -m pip install --upgrade pip
 
 # Set working directory and default command when running container
 WORKDIR /root
