@@ -14,9 +14,17 @@ sed -i "s/<<HOSTNAME>>/$(hostname)/" /etc/slurm/slurm.conf
 sed -i "s/<<CPU>>/$(nproc)/" /etc/slurm/slurm.conf
 sed -i "s/<<MEMORY>>/$(if [[ "$(slurmd -C)" =~ RealMemory=([0-9]+) ]]; then echo "${BASH_REMATCH[1]}"; else exit 100; fi)/" /etc/slurm/slurm.conf
 
+# Slurm 24.05+ defaults to cgroup/v2 which needs dbus (unavailable in
+# containers). Use cgroup/v1 instead. Older versions ignore cgroup.conf
+# if ProctrackType is not cgroup-based, so this is safe to always write.
+SLURM_MAJOR=\$(slurmctld -V 2>/dev/null | grep -oP '\d+' | head -1)
+if [ "\${SLURM_MAJOR:-0}" -ge 24 ]; then
+    echo "CgroupPlugin=cgroup/v1" > /etc/slurm/cgroup.conf
+fi
+
 # Create runtime directories and set permissions
-mkdir -p /var/run/munge
-chown munge:munge /var/run/munge
+mkdir -p /var/run/munge /var/log/munge
+chown munge:munge /var/run/munge /var/log/munge
 chmod 755 /var/run/munge
 
 # Ensure slurmctld (runs as SlurmUser=slurm) can write logs and PID
@@ -28,12 +36,9 @@ munged --force
 sleep 0.5
 
 # Start Slurm daemons
-slurmd
 slurmctld
+slurmd
 sleep 1
-
-# Ensure node is in a usable state
-scontrol update NodeName=\$(hostname) State=resume
 SCRIPT
 
 # Revoke sudo permissions

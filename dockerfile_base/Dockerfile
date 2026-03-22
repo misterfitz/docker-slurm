@@ -47,9 +47,9 @@ RUN groupadd -r slurm 2>/dev/null || true \
 RUN dnf -y install munge munge-libs \
                    slurm slurm-slurmd slurm-slurmctld
 
-# Generate munge key
+# Generate munge key and fix log directory ownership
 RUN dd if=/dev/urandom of=/etc/munge/munge.key bs=1 count=1024 2>/dev/null \
-    && chown munge:munge /etc/munge/munge.key \
+    && chown munge:munge /etc/munge/munge.key /var/log/munge \
     && chmod 400 /etc/munge/munge.key
 
 # Slurm configuration
