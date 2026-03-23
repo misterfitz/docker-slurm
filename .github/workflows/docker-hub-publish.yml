@@ -15,12 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rocky_version: "8"
-            slurm_version: "23.02.6"
-          - rocky_version: "8"
-            slurm_version: "24.11.5"
-          - rocky_version: "8"
-            slurm_version: "25.05.1"
           - rocky_version: "9"
             slurm_version: "24.11.5"
           - rocky_version: "9"

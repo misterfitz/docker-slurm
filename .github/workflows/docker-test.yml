@@ -16,12 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - rocky_version: "8"
-            slurm_version: "23.02.6"
-          - rocky_version: "8"
-            slurm_version: "24.11.5"
-          - rocky_version: "8"
-            slurm_version: "25.05.1"
+          # Note: Rocky 8 dropped — omnivector RPMs are built against
+          # glibc 2.34+ and incompatible with EL8's glibc 2.28
           - rocky_version: "9"
             slurm_version: "24.11.5"
           - rocky_version: "9"

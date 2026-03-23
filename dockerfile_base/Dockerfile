@@ -39,22 +39,32 @@ RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
 RUN dnf -y install glibc-langpack-en
 ENV LANG=en_US.UTF-8
 
-# Create slurm user/group (RPMs may not create them)
-RUN groupadd -r slurm 2>/dev/null || true \
-    && useradd -r -g slurm -d /nonexistent -s /sbin/nologin slurm 2>/dev/null || true
-
 # Install munge and Slurm
 RUN dnf -y install munge munge-libs \
                    slurm slurm-slurmd slurm-slurmctld
 
+# Create slurm user/group if RPMs didn't (omnivector RPMs may not include
+# user-creation scriptlets, and %pre scripts may delete pre-existing users)
+RUN getent group slurm >/dev/null || groupadd -r slurm \
+    && getent passwd slurm >/dev/null || useradd -r -g slurm -d /nonexistent -s /sbin/nologin slurm
+
 # Generate munge key and fix log directory ownership
 RUN dd if=/dev/urandom of=/etc/munge/munge.key bs=1 count=1024 2>/dev/null \
     && chown munge:munge /etc/munge/munge.key /var/log/munge \
-    && chmod 400 /etc/munge/munge.key
+    && chmod 400 /etc/munge/munge.key \
+    && chmod 0700 /var/log/munge
 
 # Slurm configuration
 RUN mkdir -p /etc/slurm
 COPY slurm.conf /etc/slurm/slurm.conf
+
+# Slurm 24.05+ defaults to cgroup/v2 which requires dbus (unavailable in
+# containers). Write cgroup.conf to force cgroup/v1 for versions >= 24.
+RUN SLURM_MAJOR=$(echo ${SLURM_VERSION} | cut -d. -f1) \
+    && if [ "$SLURM_MAJOR" -ge 24 ]; then \
+         echo "CgroupPlugin=cgroup/v1" > /etc/slurm/cgroup.conf; \
+       fi
+
 RUN mkdir -p /var/spool/slurmctld /var/spool/slurmd \
     && chown slurm:slurm /var/spool/slurmctld
 
