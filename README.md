@@ -30,10 +30,9 @@ Images are tagged with Slurm version and EL version: `{variant}-{slurm_version}-
 
 **Available versions:**
 
-| Rocky Linux | Slurm Versions       | Example Tag            |
-|:------------|:---------------------|:-----------------------|
-| 8           | 23.02, 24.11, 25.05  | `base-25.05-el8`       |
-| 9           | 24.11, 25.05         | `full-root-24.11-el9`  |
+| Rocky Linux | Slurm Versions | Example Tag            |
+|:------------|:---------------|:-----------------------|
+| 9           | 24.11, 25.05   | `full-root-24.11-el9`  |
 
 > **Note**: For the images with a standard user, the default username is `docker` and the default password is `rocky`.
 
@@ -177,7 +176,7 @@ This project is a fork of [nathan-hess/docker-slurm](https://github.com/nathan-h
 
 Key changes from upstream:
 - **Rocky Linux** base instead of Ubuntu
-- **Multiple Slurm versions** via matrix CI builds (23.02, 24.11, 25.05)
+- **Multiple Slurm versions** via matrix CI builds (24.11, 25.05)
 - **Podman compatible** — uses direct daemon calls instead of init system services
 - **Slurm RPMs** from [omnivector-solutions/slurm-repo](https://github.com/omnivector-solutions/slurm-repo)
 
