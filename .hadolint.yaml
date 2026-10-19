@@ -1,0 +1,13 @@
+ignored:
+  # Package versions are intentionally unpinned; images are rebuilt monthly
+  # to pick up updates
+  - DL3041
+  - DL3013
+  # USERNAME/PASSWORD build args are intentional for throwaway CI images
+  - DL3064
+  # False positive on `FROM stage-${USER_PRIVILEGE_LEVEL}` (a local stage)
+  - DL3006
+  # CMD needs shell form to chain `/etc/startup.sh ; /bin/bash -l`
+  - DL3025
+  # Separate RUN layers are kept for readability and cache reuse
+  - DL3059
