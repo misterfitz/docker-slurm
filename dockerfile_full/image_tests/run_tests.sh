@@ -7,7 +7,7 @@ BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 if [ "${1}" == "standard" ] || [ "${1}" == "root" ]; then
     python3 "${BASE_DIR}/run_tests_${1}.py"
 else
-    printf "User privilege level \"${1}\" is not valid. Please select "
+    printf "User privilege level \"%s\" is not valid. Please select " "${1}"
     printf "\"standard\" or \"root\"\n"
     exit 1
 fi

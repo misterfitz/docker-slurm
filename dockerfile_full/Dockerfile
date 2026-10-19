@@ -15,7 +15,8 @@ ARG UID
 FROM ${BASE_DOCKER_REPO}:${BASE_TAG} AS stage-root
 
 # Run system updates
-RUN dnf -y upgrade
+RUN dnf -y upgrade \
+    && dnf clean all
 
 # Install system packages
 # --allowerasing is needed on Rocky 9 where curl-minimal conflicts with curl
@@ -38,16 +39,18 @@ RUN dnf -y install --allowerasing bc \
                    tree \
                    vim \
                    wget \
-                   zip
+                   zip \
+    && dnf clean all
 
 # Ensure Python 3.8+ is available (Rocky 8 defaults to Python 3.6)
 RUN python3 -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)" || \
     (dnf -y install python39 python39-pip && \
+     dnf clean all && \
      alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1000 && \
      alternatives --set python3 /usr/bin/python3.9)
 
 # Upgrade pip to latest version
-RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install --no-cache-dir --upgrade pip
 
 # Set working directory and default command when running container
 WORKDIR /root
@@ -61,12 +64,13 @@ ARG PASSWORD
 ARG UID
 
 # Create user account and add to "wheel" group
-RUN dnf -y install sudo openssl
+RUN dnf -y install sudo openssl \
+    && dnf clean all
 RUN useradd --create-home --uid=${UID} ${USERNAME} -p "$(openssl passwd -1 ${PASSWORD})" \
     && usermod -a -G wheel ${USERNAME}
 
 # Configure user permissions for startup script
-RUN printf "${USERNAME} ALL=(root:root) NOPASSWD: /etc/startup.sh\n" >> /etc/sudoers.d/startup \
+RUN printf "%s ALL=(root:root) NOPASSWD: /etc/startup.sh\n" "${USERNAME}" >> /etc/sudoers.d/startup \
     && chmod 0440 /etc/sudoers.d/startup \
     && visudo -c
 
@@ -74,7 +78,7 @@ RUN printf "${USERNAME} ALL=(root:root) NOPASSWD: /etc/startup.sh\n" >> /etc/sud
 USER ${USERNAME}
 
 # Enable colored Bash terminal prompt
-RUN echo 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> ~/.bashrc
+RUN printf '%s\n' 'export PS1="\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ "' >> ~/.bashrc
 
 # Add Python package executables to PATH
 ENV PATH="${PATH}:/home/${USERNAME}/.local/bin"

@@ -75,6 +75,16 @@ docker compose build build-full-root   # or build-base, build-base-root, build-f
 
 See `docker-compose.yml` for all build targets and configuration options.
 
+## Contributing
+
+[pre-commit](https://pre-commit.com) hooks lint Dockerfiles (hadolint), shell scripts (shellcheck), YAML (yamllint), and GitHub Actions workflows (actionlint). CI runs the same hooks on every push and pull request. To run them locally before each commit:
+
+```sh
+pip install pre-commit
+pre-commit install            # run hooks on every commit
+pre-commit run --all-files    # run hooks against the whole repo
+```
+
 ## Project Details
 
 Fork of [nathan-hess/docker-slurm](https://github.com/nathan-hess/docker-slurm), adapted for:

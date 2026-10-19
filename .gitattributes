@@ -1,0 +1,6 @@
+# Normalize line endings to LF everywhere, including Windows checkouts, so
+# scripts copied into images and linted by pre-commit never contain CRLF
+* text=auto eol=lf
+
+*.png binary
+*.gif binary
