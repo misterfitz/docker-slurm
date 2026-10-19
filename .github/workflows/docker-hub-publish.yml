@@ -14,11 +14,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Slurm is built from SchedMD source tarballs (see dockerfile_base),
+        # so any released version can be listed here
+        rocky_version: ["9", "10"]
+        slurm_version: ["24.11.7", "25.05.9", "25.11.8", "26.05.5"]
+        # The convenience tags (base, base-root, full, full-root, latest) are
+        # published from this combination only -- move it when adding a newer
+        # Slurm version. el9 is used because el10 requires x86-64-v3 CPUs.
         include:
           - rocky_version: "9"
-            slurm_version: "24.11.5"
-          - rocky_version: "9"
-            slurm_version: "25.05.1"
+            slurm_version: "26.05.5"
+            latest: true
     steps:
       - name: Check Out Repository Files
         uses: actions/checkout@v4
@@ -46,6 +52,11 @@ jobs:
           echo "TAG_BASE_ROOT=${{ env.TAG_BASE_ROOT }}-${suffix}" >> $GITHUB_OUTPUT
           echo "TAG_FULL_STANDARD=${{ env.TAG_FULL_STANDARD }}-${suffix}" >> $GITHUB_OUTPUT
           echo "TAG_FULL_ROOT=${{ env.TAG_FULL_ROOT }}-${suffix}" >> $GITHUB_OUTPUT
+          # Unversioned names (TAG_BASE_ROOT is overwritten in env below)
+          echo "STABLE_BASE_STANDARD=${{ env.TAG_BASE_STANDARD }}" >> $GITHUB_OUTPUT
+          echo "STABLE_BASE_ROOT=${{ env.TAG_BASE_ROOT }}" >> $GITHUB_OUTPUT
+          echo "STABLE_FULL_STANDARD=${{ env.TAG_FULL_STANDARD }}" >> $GITHUB_OUTPUT
+          echo "STABLE_FULL_ROOT=${{ env.TAG_FULL_ROOT }}" >> $GITHUB_OUTPUT
 
       - name: Publish Docker Image - base - standard
         uses: './.github/workflows/composite-actions/test-publish'
@@ -103,3 +114,20 @@ jobs:
           required_images: ${{ env.DOCKER_HUB_REPO }}:${{ env.TAG_BASE_ROOT }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKER_HUB_ACCESS_TOKEN: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      # Point the convenience tags at the images just published (copies the
+      # manifests in the registry, so digests match the versioned tags). Runs
+      # only after all four images published; manual runs only from main.
+      - name: Publish Convenience Tags
+        if: ${{ matrix.latest && (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main') }}
+        run: |
+          repo="${{ env.DOCKER_HUB_REPO }}"
+          retag() {
+            docker buildx imagetools create --prefer-index=false \
+              --tag "${repo}:${1}" "${repo}:${2}"
+          }
+          retag "${{ steps.tags.outputs.STABLE_BASE_STANDARD }}" "${{ steps.tags.outputs.TAG_BASE_STANDARD }}"
+          retag "${{ steps.tags.outputs.STABLE_BASE_ROOT }}" "${{ steps.tags.outputs.TAG_BASE_ROOT }}"
+          retag "${{ steps.tags.outputs.STABLE_FULL_STANDARD }}" "${{ steps.tags.outputs.TAG_FULL_STANDARD }}"
+          retag "${{ steps.tags.outputs.STABLE_FULL_ROOT }}" "${{ steps.tags.outputs.TAG_FULL_ROOT }}"
+          retag latest "${{ steps.tags.outputs.TAG_FULL_STANDARD }}"

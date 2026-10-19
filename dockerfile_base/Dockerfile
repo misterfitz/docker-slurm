@@ -12,24 +12,43 @@ ARG PASSWORD
 ARG UID
 
 
-## BUILD IMAGE: ROOT USER ----------------------------------------------------
-FROM rockylinux:${ROCKY_VERSION} AS stage-root
-ARG TIMEZONE
-ARG ROCKY_VERSION
+## BUILD SLURM RPMS ----------------------------------------------------------
+FROM rockylinux/rockylinux:${ROCKY_VERSION} AS rpm-builder
 ARG SLURM_VERSION
 
-# Add Slurm RPM repository
-RUN ROCKY_MAJOR=$(echo ${ROCKY_VERSION} | cut -d. -f1) \
-    && printf "[slurm]\nname=Slurm RPM Repository\nbaseurl=https://omnivector-solutions.github.io/slurm-repo/${SLURM_VERSION}/rocky${ROCKY_MAJOR}/x86_64\nenabled=1\ngpgcheck=0\n" \
-       > /etc/yum.repos.d/slurm.repo
+# Install RPM build tools and enable EPEL/CRB (CRB provides munge-devel)
+RUN dnf -y install epel-release dnf-plugins-core rpm-build tar bzip2 \
+    && dnf config-manager --set-enabled crb
 
-# Install EPEL, enable CRB/PowerTools (needed for dependencies on EL8),
-# and run system updates
-RUN dnf -y install epel-release \
-    && (dnf config-manager --set-enabled crb 2>/dev/null \
-        || dnf config-manager --set-enabled powertools 2>/dev/null \
-        || true) \
+# Build Slurm RPMs from the official SchedMD source tarball, installing the
+# build dependencies declared in that version's spec file
+WORKDIR /build
+RUN curl -fsSLO https://download.schedmd.com/slurm/slurm-${SLURM_VERSION}.tar.bz2 \
+    && tar -xjf slurm-${SLURM_VERSION}.tar.bz2 slurm-${SLURM_VERSION}/slurm.spec \
+    && dnf -y builddep slurm-${SLURM_VERSION}/slurm.spec \
+    && rpmbuild -ta slurm-${SLURM_VERSION}.tar.bz2 \
+    && rm -f /root/rpmbuild/RPMS/x86_64/*-debug*.rpm
+
+
+## BUILD IMAGE: ROOT USER ----------------------------------------------------
+FROM rockylinux/rockylinux:${ROCKY_VERSION} AS stage-root
+ARG TIMEZONE
+ARG SLURM_VERSION
+
+# Install EPEL, enable CRB, and run system updates (openssl is not included
+# in the Rocky 10 container image)
+RUN dnf -y install epel-release dnf-plugins-core openssl \
+    && dnf config-manager --set-enabled crb \
     && dnf -y upgrade
+
+# Add a local repository with the Slurm RPMs (also used by the full image to
+# install slurm-devel and slurm-contribs). priority=1 keeps dnf from replacing
+# them with the slurm packages EPEL ships.
+COPY --from=rpm-builder /root/rpmbuild/RPMS/x86_64/ /opt/slurm-rpms/
+RUN dnf -y install createrepo_c \
+    && createrepo_c /opt/slurm-rpms \
+    && printf "[slurm]\nname=Slurm ${SLURM_VERSION} (built from SchedMD source)\nbaseurl=file:///opt/slurm-rpms\nenabled=1\ngpgcheck=0\npriority=1\n" \
+       > /etc/yum.repos.d/slurm.repo
 
 # Set time zone
 RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
@@ -39,12 +58,13 @@ RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
 RUN dnf -y install glibc-langpack-en
 ENV LANG=en_US.UTF-8
 
-# Install munge and Slurm
+# Install munge and Slurm, and verify the expected Slurm version was installed
 RUN dnf -y install munge munge-libs \
-                   slurm slurm-slurmd slurm-slurmctld
+                   slurm slurm-slurmd slurm-slurmctld \
+    && [ "$(rpm -q --qf '%{VERSION}' slurm)" = "${SLURM_VERSION}" ]
 
-# Create slurm user/group if RPMs didn't (omnivector RPMs may not include
-# user-creation scriptlets, and %pre scripts may delete pre-existing users)
+# Create slurm user/group (the SchedMD RPMs do not include user-creation
+# scriptlets)
 RUN getent group slurm >/dev/null || groupadd -r slurm \
     && getent passwd slurm >/dev/null || useradd -r -g slurm -d /nonexistent -s /sbin/nologin slurm
 

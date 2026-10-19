@@ -6,23 +6,37 @@ Pre-built Rocky Linux container images with [Slurm Workload Manager](https://slu
 
 **Docker Hub:** [`misterfitz/slurm`](https://hub.docker.com/r/misterfitz/slurm)
 
-Tags follow the pattern `{variant}-{slurm_version}-{el_version}`:
+Versioned tags follow the pattern `{variant}-{slurm_version}-{el_version}`:
 
-| Tag                     | Contents                                    | Default User         |
-|:------------------------|:--------------------------------------------|:---------------------|
-| `base-{ver}-el9`        | Slurm + minimal dependencies                | standard (`docker`)  |
-| `base-root-{ver}-el9`   | Slurm + minimal dependencies                | root                 |
-| `full-{ver}-el9`        | Slurm + Python, Git, GCC, editors, etc.     | standard (`docker`)  |
-| `full-root-{ver}-el9`   | Slurm + Python, Git, GCC, editors, etc.     | root                 |
+| Tag                      | Contents                                    | Default User         |
+|:-------------------------|:--------------------------------------------|:---------------------|
+| `base-{ver}-{el}`        | Slurm + minimal dependencies                | standard (`docker`)  |
+| `base-root-{ver}-{el}`   | Slurm + minimal dependencies                | root                 |
+| `full-{ver}-{el}`        | Slurm + Python, Git, GCC, editors, etc.     | standard (`docker`)  |
+| `full-root-{ver}-{el}`   | Slurm + Python, Git, GCC, editors, etc.     | root                 |
 
-**Slurm versions:** 24.11, 25.05
+**Slurm versions:** 24.11, 25.05, 25.11, 26.05
 
-Example tags: `full-root-25.05-el9`, `base-24.11-el9`
+**EL versions:** `el9` (Rocky Linux 9), `el10` (Rocky Linux 10 — requires an x86-64-v3 CPU, i.e. Intel Haswell / AMD Excavator or newer)
+
+Example tags: `full-root-26.05-el9`, `base-24.11-el10`
+
+### Convenience Tags
+
+These always point to the newest Slurm version on Rocky Linux 9 (currently `26.05-el9`) and move whenever the images are rebuilt (monthly and on each release). Pin a versioned tag instead if you need reproducible builds.
+
+| Tag         | Points to                |
+|:------------|:-------------------------|
+| `base`      | `base-26.05-el9`         |
+| `base-root` | `base-root-26.05-el9`    |
+| `full`      | `full-26.05-el9`         |
+| `full-root` | `full-root-26.05-el9`    |
+| `latest`    | `full-26.05-el9`         |
 
 ## Quick Start
 
 ```sh
-docker run --rm -it misterfitz/slurm:full-root-25.05-el9
+docker run --rm -it misterfitz/slurm:full-root
 ```
 
 ## CI Usage
@@ -34,7 +48,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: misterfitz/slurm:full-root-25.05-el9
+      image: misterfitz/slurm:full-root-26.05-el9
     steps:
       - uses: actions/checkout@v4
       - run: /etc/startup.sh
@@ -47,7 +61,7 @@ For standard user images, use `sudo /etc/startup.sh` instead.
 
 ```yaml
 test:
-  image: misterfitz/slurm:full-root-25.05-el9
+  image: misterfitz/slurm:full-root-26.05-el9
   before_script:
     - /etc/startup.sh
   script:
@@ -81,7 +95,7 @@ Fork of [nathan-hess/docker-slurm](https://github.com/nathan-hess/docker-slurm),
 - **Rocky Linux** base (instead of Ubuntu)
 - **Multiple Slurm versions** via matrix CI builds
 - **Podman compatible** — direct daemon calls, no init system required
-- Slurm RPMs from [omnivector-solutions/slurm-repo](https://github.com/omnivector-solutions/slurm-repo)
+- Slurm RPMs built from [SchedMD source releases](https://download.schedmd.com/slurm/)
 
 ### Limitations
 

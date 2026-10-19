@@ -4,6 +4,7 @@ ARG USER_PRIVILEGE_LEVEL
 # Settings for all images
 ARG BASE_DOCKER_REPO
 ARG BASE_TAG
+ARG SLURM_VERSION
 
 # Settings for standard user images
 ARG USERNAME
@@ -13,6 +14,7 @@ ARG UID
 
 ## BUILD IMAGE: ROOT USER ----------------------------------------------------
 FROM ${BASE_DOCKER_REPO}:${BASE_TAG} AS stage-root
+ARG SLURM_VERSION
 
 # Run system updates
 RUN dnf -y upgrade
@@ -39,6 +41,9 @@ RUN dnf -y install --allowerasing bc \
                    vim \
                    wget \
                    zip
+
+# Verify Slurm was not replaced by a different version (e.g., from EPEL)
+RUN [ "$(rpm -q --qf '%{VERSION}\n' slurm slurm-devel slurm-contribs | sort -u)" = "${SLURM_VERSION}" ]
 
 # Ensure Python 3.8+ is available (Rocky 8 defaults to Python 3.6)
 RUN python3 -c "import sys; exit(0 if sys.version_info >= (3, 8) else 1)" || \
